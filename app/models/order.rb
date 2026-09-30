@@ -23,4 +23,23 @@ class Order < ApplicationRecord
   def calculate_order_total
     self.total_clp = order_items.to_a.sum(&:calculate_item_total)
   end
+
+  def dispatch_payload
+    {
+      order_id: id,
+      restaurant: restaurant.as_json(only: %i[id code name]),
+      customer: {
+        name: customer_name,
+        phone: customer_phone
+      },
+      order_type: order_type,
+      delivery_address: delivery_address,
+      items: order_items.map do |item|
+        item.as_json(only: %i[quantity unit_price_clp]).merge(
+          product: item.product.as_json(only: %i[sku name])
+        )
+      end,
+      total_clp: total_clp
+    }
+  end
 end

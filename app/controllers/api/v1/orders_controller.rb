@@ -16,8 +16,13 @@ module Api
         order.calculate_order_total
 
         if order.save
+          OrderDispatcher.new(order).call
+
           render json: {
-            id: order.id,status: "created", message: "Orden #{order.id} creada."
+            id: order.id,
+            status: "created",
+            dispatch_status: order.dispatch_status,
+            message: "Orden #{order.id} creada."
           }, status: :created
         else
           render json: {
