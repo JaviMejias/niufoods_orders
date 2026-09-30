@@ -9,9 +9,14 @@ class Order < ApplicationRecord
 
   validates :customer_name, :customer_phone, :order_type, presence: true
   validates :delivery_address, presence: true, if: :delivery?
-  validates :total_clp,
-            numericality: { only_integer: true, greater_than: 0 }
   validates :order_items, presence: true
+  validates :total_clp,
+            numericality: { only_integer: true, greater_than: 0 },
+            if: -> { order_items.present? }
+
+  scope :dashboard_listing, -> {
+    includes(:restaurant).order(created_at: :desc, id: :desc)
+  }
 
   def assign_customer_data(customer)
     return if customer.blank?

@@ -5,6 +5,25 @@ module Api
         restaurant_id order_type delivery_address customer items
       ]
 
+      def index
+        orders = Order.dashboard_listing
+                      .limit(per_page)
+                      .offset((page - 1) * per_page)
+
+        data = orders.map do |order|
+          OrderDashboardSerializer.new(order).as_json
+        end
+
+        render json: {
+          data: data,
+          pagination: {
+            page: page,
+            per_page: per_page,
+            total_count: Order.count
+          }
+        }
+      end
+
       def create
         attributes = order_params.to_h.deep_symbolize_keys
         customer_data = attributes.delete(:customer)
@@ -39,6 +58,17 @@ module Api
           { customer: [:name, :phone] },
           { items: [[ :product_id, :quantity ]] }
         ])
+      end
+
+      def page
+        [params.fetch(:page, "1").to_i, 1].max
+      end
+
+      def per_page
+        requested = params.fetch(:per_page, "20").to_i
+        return 20 unless requested.positive?
+
+        [requested, 100].min
       end
     end
   end

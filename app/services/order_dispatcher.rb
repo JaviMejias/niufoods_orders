@@ -16,7 +16,8 @@ class OrderDispatcher
     request = Net::HTTP::Post.new(uri)
     request["Content-Type"] = "application/json"
     request["Accept"] = "application/json"
-    request.body = @order.dispatch_payload.to_json
+    payload = Api::V1::OrderDispatchSerializer.new(@order).as_json
+    request.body = payload.to_json
 
     response = Net::HTTP.start(
       uri.hostname,
