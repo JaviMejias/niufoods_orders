@@ -32,6 +32,32 @@ export async function fetchOrdersPage(page, signal) {
   }
 }
 
+export async function fetchOrderDetail(orderId, signal) {
+  const response = await fetch(`/api/v1/orders/${orderId}`, { signal })
+
+  if (response.status === 404) {
+    throw new Error('Esta orden ya no está disponible.')
+  }
+
+  if (!response.ok) {
+    throw new Error('No se pudo cargar el pedido. Intenta nuevamente.')
+  }
+
+  const order = await response.json()
+
+  if (
+    order?.id !== orderId ||
+    !order.restaurant ||
+    !order.customer ||
+    !Array.isArray(order.items) ||
+    order.items.length === 0
+  ) {
+    throw new Error('La respuesta del detalle del pedido no es válida.')
+  }
+
+  return order
+}
+
 export function mergeOrders(previousOrders, nextOrders) {
   const ordersById = new Map(previousOrders.map((order) => [order.id, order]))
 

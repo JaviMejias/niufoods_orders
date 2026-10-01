@@ -64,6 +64,10 @@
   background: var(--color-scrollbar-active);
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
 }

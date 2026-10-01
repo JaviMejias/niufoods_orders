@@ -53,15 +53,17 @@ El PDF `Prueba_Niufoods_Ordenes.pdf` es la referencia funcional: número de orde
 restaurante, total CLP, modalidad, fecha y estado del despacho. El contrato de
 datos es `GET /api/v1/orders`, implementado en
 `app/controllers/api/v1/orders_controller.rb` y su serializer de dashboard.
+El detalle opcional del PDF usa `GET /api/v1/orders/:id` y un serializer propio;
+incluye productos, cantidades, cliente y los precios guardados en la orden.
 
 La referencia visual es un registro de pedidos de restaurante: identificadores
 como pequeñas etiquetas rojas, montos alineados y estados reconocibles. El rojo
 es una elección de este proyecto; no representa una guía oficial de marca.
 La lectura de datos prevalece sobre decoración, menús o métricas adicionales.
 
-Interfaz de producto de una sola pantalla en español de Chile, moneda CLP y
-zona horaria `America/Santiago`. No hay pantallas hermanas ni componentes previos.
-No se requiere un UX-CONTRACT independiente para esta única vista de consulta.
+Interfaz de producto de una sola pantalla con detalle en modal, en español de
+Chile, moneda CLP y zona horaria `America/Santiago`. No hay pantallas hermanas.
+No se requiere un UX-CONTRACT independiente para este único flujo listado/detalle.
 
 **Fuente de tokens:** `frontend/src/index.css` es el dueño de los valores en
 ejecución; este documento refleja esos valores y su intención. `colors.X`
@@ -111,6 +113,23 @@ paginación por offset de Rails; el listado no representa una instantánea hist�
 
 Bordes y cambios de superficie separan las áreas, sin sombras grandes ni gradientes.
 El hover suave de filas facilita la lectura y no implica que sean interactivas.
+El número de orden es un botón con hover, estado presionado y foco visible;
+la cabecera explica que permite consultar el pedido.
+
+El modal compartido usa `<dialog>` y `showModal()`: el navegador controla su capa
+superior, foco e aislamiento del fondo. No hay capas con z-index propios.
+El backdrop deriva de `--color-ink` al 45 % sobre transparente. El modal mide hasta
+720 px, conserva 16 px de margen por lado y limita su alto al viewport. Su cuerpo
+es dueño del scroll vertical del detalle; encabezado y cierre permanecen visibles.
+Los productos conservan precios completos mediante scroll horizontal propio.
+
+Al abrir se enfoca el botón de cierre; Tab permanece dentro del modal. Escape,
+la cruz, «Cerrar» y una pulsación iniciada y terminada en el fondo lo cierran.
+Al cerrar se devuelve el foco al botón que lo abrió, sin cambiar el scroll.
+El documento bloquea su scroll mientras el modal está abierto y lo restaura al
+cerrar. El listado permanece montado y pausa nuevas cargas automáticas mientras
+se consulta el detalle. La carga del detalle reserva espacio, anuncia su estado,
+ofrece reintento ante errores y se cancela al cerrar; no modifica ni despacha órdenes.
 
 ## Shapes
 
@@ -121,6 +140,11 @@ etiquetas de estado son completamente redondeadas. Los puntos son decorativos.
 
 - `App.jsx`: consulta existente, cabecera, panel y tabla semántica.
 - `App.css`: layout y variantes visuales del panel, filas, modalidades y estados.
+- `components/Modal.jsx` y `Modal.css`: dueño único del modal reutilizable,
+  comportamiento de foco, cierre, backdrop y scroll. Recibe título y contenido.
+- `components/OrderDetails.jsx` y `OrderDetails.css`: consulta y contenido del
+  pedido; datos del cliente, dirección para delivery y tabla de productos.
+- `lib/formatters.js`: moneda, zona horaria y textos de estado compartidos.
 - `index.css`: tokens, tipografía base, foco visible y scrollbars globales.
 - Carga, error y listado vacío reservan al menos 280 px y usan mensajes en español.
   El indicador de carga respeta movimiento reducido.

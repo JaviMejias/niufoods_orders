@@ -215,7 +215,9 @@
 .order-number {
   display: inline-block;
   min-width: 48px;
-  padding: 4px 7px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
   border-radius: var(--radius-small);
   color: var(--color-brand);
   background: var(--color-brand-soft);
@@ -223,6 +225,16 @@
   font-size: 12px;
   font-weight: 600;
   text-align: center;
+  cursor: pointer;
+}
+
+.order-number:hover {
+  border-color: var(--color-brand);
+}
+
+.order-number:active {
+  color: var(--color-surface);
+  background: var(--color-brand);
 }
 
 .restaurant-cell {

@@ -1,23 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchOrdersPage, mergeOrders } from './lib/orders.js'
+import { currencyFormatter, dateFormatter, dispatchStatusLabels } from './lib/formatters.js'
+import Modal from './components/Modal.jsx'
+import OrderDetails from './components/OrderDetails.jsx'
 import './App.css'
-
-const currencyFormatter = new Intl.NumberFormat('es-CL', {
-  style: 'currency',
-  currency: 'CLP',
-})
-
-const dateFormatter = new Intl.DateTimeFormat('es-CL', {
-  dateStyle: 'short',
-  timeStyle: 'short',
-  timeZone: 'America/Santiago',
-})
-
-const dispatchStatusLabels = {
-  pending: 'Pendiente de envío',
-  sent: 'Enviada al restaurante',
-  error: 'Error de envío',
-}
 
 function App() {
   const [feed, setFeed] = useState({
@@ -29,6 +15,7 @@ function App() {
     nextPage: 1,
   })
   const [request, setRequest] = useState({ page: 1 })
+  const [selectedOrderId, setSelectedOrderId] = useState(null)
   const requestInFlight = useRef(true)
   const loadMoreTarget = useRef(null)
   const { orders, loading, error, totalCount, hasMore, nextPage } = feed
@@ -81,7 +68,7 @@ function App() {
   }, [hasMore, nextPage])
 
   useEffect(() => {
-    if (loading || error || !hasMore || !loadMoreTarget.current) return
+    if (selectedOrderId !== null || loading || error || !hasMore || !loadMoreTarget.current) return
     if (typeof IntersectionObserver === 'undefined') return
 
     let active = true
@@ -98,7 +85,7 @@ function App() {
       active = false
       observer.disconnect()
     }
-  }, [loading, error, hasMore, loadMore])
+  }, [selectedOrderId, loading, error, hasMore, loadMore])
 
   return (
     <div className="app-shell">
@@ -132,7 +119,7 @@ function App() {
           <div className="orders-panel__header">
             <div>
               <h2 id="orders-heading">Pedidos recibidos</h2>
-              <p>Información de cada orden y su restaurante.</p>
+              <p>Selecciona el número de una orden para ver su pedido.</p>
             </div>
             {!initialLoading && !initialError && (
               <span className="orders-count">
@@ -195,7 +182,15 @@ function App() {
                     {orders.map((order) => (
                       <tr key={order.id}>
                         <td>
-                          <span className="order-number">#{order.id}</span>
+                          <button
+                            className="order-number"
+                            type="button"
+                            aria-haspopup="dialog"
+                            aria-label={`Ver pedido de la orden #${order.id}`}
+                            onClick={() => setSelectedOrderId(order.id)}
+                          >
+                            #{order.id}
+                          </button>
                         </td>
                         <td className="restaurant-cell">
                           <span className="restaurant-name">{order.restaurant.name}</span>
@@ -267,6 +262,11 @@ function App() {
           </div>
         </section>
       </main>
+      {selectedOrderId !== null && (
+        <Modal title={`Pedido #${selectedOrderId}`} onClose={() => setSelectedOrderId(null)}>
+          <OrderDetails key={selectedOrderId} orderId={selectedOrderId} />
+        </Modal>
+      )}
     </div>
   )
 }

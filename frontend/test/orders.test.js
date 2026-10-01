@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, mock, test } from 'node:test'
-import { fetchOrdersPage, mergeOrders } from '../src/lib/orders.js'
+import { fetchOrderDetail, fetchOrdersPage, mergeOrders } from '../src/lib/orders.js'
 
 afterEach(() => mock.restoreAll())
 
@@ -102,4 +102,69 @@ test('rejects unexpected page metadata instead of skipping orders', async () => 
   mock.method(globalThis, 'fetch', async () => pageResponse(3, 100))
 
   await assert.rejects(fetchOrdersPage(2), /respuesta.*no es válida/)
+})
+
+const orderDetail = {
+  id: 72,
+  restaurant: { id: 3, code: 'NUNO', name: 'Niu Foods Ñuñoa' },
+  customer: { name: 'Ana Pérez', phone: '+56912345678' },
+  order_type: 'delivery',
+  delivery_address: 'Av. Providencia 123',
+  dispatch_status: 'sent',
+  created_at: '2026-10-01T13:54:11.841Z',
+  total_clp: 17980,
+  items: [{
+    id: 101,
+    product: { id: 1, name: 'Niu Roll Salmón', sku: 'NIU-001' },
+    quantity: 2,
+    unit_price_clp: 8990,
+    item_total_clp: 17980,
+  }],
+}
+
+test('fetches only the selected order and keeps its stored prices and customer data', async () => {
+  mock.method(globalThis, 'fetch', async (url) => {
+    assert.equal(url, '/api/v1/orders/72')
+    return Response.json(orderDetail)
+  })
+
+  assert.deepEqual(await fetchOrderDetail(72), orderDetail)
+})
+
+test('reports when a selected order no longer exists', async () => {
+  mock.method(globalThis, 'fetch', async () => new Response(null, { status: 404 }))
+
+  await assert.rejects(fetchOrderDetail(72), /orden ya no está disponible/)
+})
+
+test('allows retrying a failed detail request', async () => {
+  let attempts = 0
+  mock.method(globalThis, 'fetch', async () => {
+    attempts += 1
+    return attempts === 1 ? new Response(null, { status: 503 }) : Response.json(orderDetail)
+  })
+
+  await assert.rejects(fetchOrderDetail(72), /No se pudo cargar el pedido/)
+  assert.deepEqual(await fetchOrderDetail(72), orderDetail)
+  assert.equal(attempts, 2)
+})
+
+test('cancels the detail request with the provided abort signal', async () => {
+  const controller = new AbortController()
+  mock.method(globalThis, 'fetch', async (_url, options) => {
+    assert.equal(options.signal, controller.signal)
+    options.signal.throwIfAborted()
+    return Response.json(orderDetail)
+  })
+  controller.abort()
+
+  await assert.rejects(fetchOrderDetail(72, controller.signal), { name: 'AbortError' })
+})
+
+test('rejects a detail response that belongs to another order or lacks items', async () => {
+  mock.method(globalThis, 'fetch', async () => Response.json({ ...orderDetail, id: 71 }))
+  await assert.rejects(fetchOrderDetail(72), /detalle.*no es válida/)
+
+  mock.method(globalThis, 'fetch', async () => Response.json({ ...orderDetail, items: [] }))
+  await assert.rejects(fetchOrderDetail(72), /detalle.*no es válida/)
 })

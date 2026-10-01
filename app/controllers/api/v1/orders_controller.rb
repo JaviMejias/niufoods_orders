@@ -24,6 +24,14 @@ module Api
         }
       end
 
+      def show
+        order = Order.includes(:restaurant, order_items: :product).find(params[:id])
+
+        render json: OrderDetailSerializer.new(order).as_json
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Orden no encontrada." }, status: :not_found
+      end
+
       def create
         attributes = order_params.to_h.deep_symbolize_keys
         customer_data = attributes.delete(:customer)
@@ -55,20 +63,20 @@ module Api
       def order_params
         params.expect(order: [
           :restaurant_id, :order_type, :delivery_address,
-          { customer: [:name, :phone] },
-          { items: [[ :product_id, :quantity ]] }
+          { customer: [ :name, :phone ] },
+          { items: [ [ :product_id, :quantity ] ] }
         ])
       end
 
       def page
-        [params.fetch(:page, "1").to_i, 1].max
+        [ params.fetch(:page, "1").to_i, 1 ].max
       end
 
       def per_page
         requested = params.fetch(:per_page, "20").to_i
         return 20 unless requested.positive?
 
-        [requested, 100].min
+        [ requested, 100 ].min
       end
     end
   end
