@@ -47,6 +47,12 @@ Con ambos servidores activos puedes ejecutar el simulador de órdenes:
 ruby script/simulate_orders.rb
 ```
 
+El script envía una orden válida de retiro y otra de delivery por cada restaurante
+cargado, con productos y cantidades aleatorios. Con los tres locales del dataset,
+son seis órdenes válidas. Después envía tres solicitudes inválidas: nombre vacío,
+restaurante inexistente y orden sin productos. Cada solicitud muestra el escenario,
+el restaurante, el tipo de pedido, el código HTTP y el resultado de la API.
+
 ## Pruebas
 
 ```bash

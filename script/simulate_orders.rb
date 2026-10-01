@@ -4,7 +4,7 @@ require "net/http"
 require "uri"
 require "json"
 
-restaurant_ids = Restaurant.pluck(:id)
+restaurant_ids = Restaurant.order(:id).pluck(:id)
 product_ids = Product.pluck(:id)
 order_types = Order.order_types.keys
 
@@ -12,12 +12,20 @@ abort "No hay restaurantes o productos cargados." if restaurant_ids.empty? || pr
 
 uri = URI("http://127.0.0.1:3000/api/v1/orders")
 
-5.times do |index|
-  order_type = order_types.sample
+scenarios = restaurant_ids.product(order_types).map do |restaurant_id, order_type|
+  { name: "válido", restaurant_id: restaurant_id, order_type: order_type }
+end
+
+[ "nombre vacío", "restaurante inexistente", "sin productos" ].each do |name|
+  scenarios << { name: name, restaurant_id: restaurant_ids.first, order_type: "pickup" }
+end
+
+scenarios.each_with_index do |scenario, index|
+  order_type = scenario[:order_type]
   item_count = rand(1..4)
 
   payload = {
-    restaurant_id: restaurant_ids.sample,
+    restaurant_id: scenario[:restaurant_id],
     order_type: order_type,
     customer: {
       name: Faker::Name.name,
@@ -35,18 +43,13 @@ uri = URI("http://127.0.0.1:3000/api/v1/orders")
     payload[:delivery_address] = Faker::Address.full_address
   end
 
-  scenario = "válido"
-
-  case index
-  when 1
+  case scenario[:name]
+  when "nombre vacío"
     payload[:customer][:name] = ""
-    scenario = "nombre vacío"
-  when 2
-    payload[:restaurant_id] = 99_999
-    scenario = "restaurante inexistente"
-  when 3
+  when "restaurante inexistente"
+    payload[:restaurant_id] = restaurant_ids.max + 1
+  when "sin productos"
     payload[:items] = []
-    scenario = "sin productos"
   end
 
   request = Net::HTTP::Post.new(uri)
@@ -60,7 +63,7 @@ uri = URI("http://127.0.0.1:3000/api/v1/orders")
 
   response_body = JSON.parse(response.body)
 
-  puts "Solicitud #{index + 1} (#{scenario}): HTTP #{response.code}"
+  puts "Solicitud #{index + 1} (#{scenario[:name]}, restaurante #{payload[:restaurant_id]}, #{order_type}): HTTP #{response.code}"
 
   if response.is_a?(Net::HTTPSuccess)
     puts "Orden #{response_body["id"]} creada."
