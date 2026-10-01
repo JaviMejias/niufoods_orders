@@ -4,7 +4,7 @@ class Order < ApplicationRecord
   has_many :order_items
   accepts_nested_attributes_for :order_items
 
-  enum :order_type, { pickup: 0, delivery: 1 }
+  enum :order_type, { pickup: 0, delivery: 1 }, validate: true
   enum :dispatch_status, { pending: 0, sent: 1, error: 2 }
 
   validates :customer_name, :customer_phone, :order_type, presence: true
