@@ -8,17 +8,18 @@ de cada pedido en un modal.
 ## Requisitos
 
 - Node.js y pnpm. Versiones utilizadas: Node.js `22.22.1` y pnpm `12.8.1`.
-- API Rails del proyecto con PostgreSQL configurado y los datos iniciales cargados.
+- API Rails del proyecto con PostgreSQL configurado.
 
-En WSL, ejecutar los comandos desde Ubuntu con las instalaciones de Node.js y
-pnpm de Linux, dentro de `/home/...`; no utilizar el ejecutable de pnpm de Windows.
+La [guía de instalación](../docs/installation.md) separa los pasos para Ubuntu y
+Windows con WSL 2. En ambos casos, ejecutar los comandos de esta guía desde la
+terminal de Ubuntu, con Node.js y pnpm instalados en Linux.
 
 ## Ejecución local
 
-Con el backend configurado, ejecutar desde la raíz del repositorio:
+Con la instalación terminada, iniciar la API desde la raíz del repositorio
+`niufoods_orders`:
 
 ```bash
-bin/rails db:prepare
 bin/rails server -b 127.0.0.1 -p 3000
 ```
 
@@ -31,8 +32,8 @@ pnpm dev
 ```
 
 Abrir la dirección que muestra Vite, normalmente `http://localhost:5173`.
-Si la API ya está ejecutándose en el puerto 3000, mantener ese proceso y arrancar
-únicamente el frontend.
+Si la API ya está ejecutándose en el puerto 3000, iniciar únicamente el frontend.
+Una base sin órdenes muestra el estado vacío de la tabla.
 
 `vite.config.js` dirige las solicitudes `/api` a `http://127.0.0.1:3000` durante
 el desarrollo. React consulta rutas relativas; no requiere configurar CORS para
@@ -89,12 +90,12 @@ pnpm lint
 pnpm build
 ```
 
-Los tests usan el runner integrado de Node.js y respuestas HTTP simuladas. Cubren
-las cinco páginas de 100 órdenes, la última página parcial de 63 órdenes, un listado
-vacío, páginas superpuestas, fallo y reintento, cancelación y metadatos inesperados.
-También cubren la consulta del pedido seleccionado, HTTP 404, reintento,
-cancelación y respuestas de detalle inválidas.
-No incluyen una prueba automatizada de la interfaz en un navegador.
+Las pruebas usan Node.js y respuestas HTTP simuladas. Cubren listados de 100 y 63
+órdenes para comprobar la paginación completa y una última página incompleta.
+También verifican un listado vacío, páginas superpuestas, errores, reintentos,
+cancelación de solicitudes HTTP y metadatos inesperados. Para el detalle cubren
+la consulta de la orden seleccionada, HTTP 404 y respuestas inválidas.
+La interacción con la interfaz se comprueba en el navegador.
 
 Las pruebas de integración del endpoint se ejecutan desde la raíz del proyecto:
 
@@ -107,6 +108,8 @@ que los publique debe dirigir `/api` al backend Rails; el proxy de desarrollo no
 forma parte de esos archivos.
 
 ## Organización
+
+Las rutas de esta sección son relativas a la carpeta `frontend/`.
 
 - `src/App.jsx`: tabla, scroll infinito y selección de una orden.
 - `src/components/Modal.jsx`: modal reutilizable; recibe título, contenido y cierre.
