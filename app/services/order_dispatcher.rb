@@ -42,7 +42,7 @@ class OrderDispatcher
       mark_as_error("El local no confirmó la recepción (HTTP #{response.code}).")
     end
   rescue Net::OpenTimeout, Net::ReadTimeout, SocketError,
-         SystemCallError, JSON::ParserError => error
+         SystemCallError, IOError, JSON::ParserError => error
     mark_as_error("No se pudo completar el despacho: #{error.message}")
   end
 
