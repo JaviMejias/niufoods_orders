@@ -162,9 +162,13 @@ Desde la raíz, con PostgreSQL disponible:
 
 ```bash
 bin/rails test
+bin/rubocop
+bin/brakeman --no-pager
+bin/bundler-audit check --update
 ```
 
-Las pruebas de integración cubren modalidad inválida, fallos de conexión,
+Las pruebas de integración cubren cálculo de totales, precios enviados por el
+cliente, modalidad inválida, fallos de conexión,
 despacho a los tres restaurantes, confirmaciones incorrectas, validación del
 receptor y detalle del pedido con precios guardados. Simulan el transporte HTTP;
 no requieren levantar servidores ni utilizan la base de desarrollo.
@@ -180,6 +184,9 @@ pnpm build
 Las pruebas del frontend cubren paginación, combinación de páginas, reintentos,
 cancelación de solicitudes HTTP y consulta del detalle. La interacción con la tabla
 y el modal se comprueba en el navegador mediante el flujo descrito arriba.
+
+GitHub Actions ejecuta las pruebas, los controles de estilo y el análisis de
+seguridad del backend, además de las pruebas, lint y build del frontend.
 
 ## Decisiones técnicas y alcance
 

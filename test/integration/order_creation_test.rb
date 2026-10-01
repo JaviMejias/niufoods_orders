@@ -15,6 +15,43 @@ class OrderCreationTest < ActionDispatch::IntegrationTest
     }
   end
 
+  test "calculates and persists the total from product prices and quantities" do
+    payload = order_payload_with_multiple_products
+
+    with_successful_dispatch do
+      assert_difference "Order.count", 1 do
+        assert_difference "OrderItem.count", 2 do
+          post api_v1_orders_url, params: payload, as: :json
+        end
+      end
+    end
+
+    assert_response :created
+    assert_equal "sent", response.parsed_body.fetch("dispatch_status")
+
+    order = Order.find(response.parsed_body.fetch("id"))
+    items = order.order_items.order(:product_id).to_a
+    assert_equal 22470, order.total_clp
+    assert_equal [ 2, 1 ], items.map(&:quantity)
+    assert_equal [ 8990, 4490 ], items.map(&:unit_price_clp)
+    assert_equal [ 17980, 4490 ], items.map(&:item_total)
+  end
+
+  test "ignores totals and unit prices supplied by the client" do
+    payload = order_payload_with_multiple_products.merge(total_clp: 1)
+    payload[:items].each { |item| item[:unit_price_clp] = 1 }
+
+    with_successful_dispatch do
+      post api_v1_orders_url, params: payload, as: :json
+    end
+
+    assert_response :created
+
+    order = Order.find(response.parsed_body.fetch("id"))
+    assert_equal 22470, order.total_clp
+    assert_equal [ 8990, 4490 ], order.order_items.order(:product_id).pluck(:unit_price_clp)
+  end
+
   test "rejects an unknown order type without saving the order or its items" do
     assert_no_difference [ "Order.count", "OrderItem.count" ] do
       post api_v1_orders_url, params: @payload.merge(order_type: "invalid"), as: :json
@@ -33,6 +70,35 @@ class OrderCreationTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def order_payload_with_multiple_products
+    product = Product.create!(name: "Gyozas de Pollo x5", sku: "TEST-SKU-005", price_clp: 4490)
+    @payload.merge(items: [
+      { product_id: @product.id, quantity: 2 },
+      { product_id: product.id, quantity: 1 }
+    ])
+  end
+
+  def with_successful_dispatch
+    simulated_http = Class.new(Net::HTTP)
+    simulated_http.define_singleton_method(:start) do |*, **, &block|
+      connection = Object.new
+      connection.define_singleton_method(:request) do |request|
+        payload = JSON.parse(request.body)
+        acknowledgment = {
+          status: "received",
+          order_id: payload.fetch("order_id"),
+          restaurant_id: payload.dig("restaurant", "id")
+        }
+        result = Net::HTTPCreated.new("1.1", "201", "Created")
+        result.define_singleton_method(:body) { acknowledgment.to_json }
+        result
+      end
+      block.call(connection)
+    end
+
+    stub_const(Net, :HTTP, simulated_http) { yield }
+  end
 
   def assert_failed_dispatch(connection_error)
     failing_http = Class.new(Net::HTTP)
