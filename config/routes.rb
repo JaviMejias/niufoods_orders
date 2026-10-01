@@ -4,7 +4,9 @@ Rails.application.routes.draw do
       resources :orders, only: %i[create index]
 
       namespace :store do
-        resources :orders, only: [:create]
+        resources :restaurants, only: [] do
+          resources :orders, only: [ :create ]
+        end
       end
     end
   end
