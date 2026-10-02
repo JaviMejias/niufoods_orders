@@ -27,7 +27,7 @@ utilizadas:
 | PostgreSQL | 18.6 |
 | Node.js | 22.22.1 |
 | pnpm | 12.8.1 |
-| React / Vite | 19.2.8 / 8.3.1 |
+| React / Vite | 19.3.0 / 8.3.1 |
 
 Ruby se selecciona mediante `.ruby-version`; las dependencias de Rails y del
 frontend están fijadas en `Gemfile.lock` y `frontend/pnpm-lock.yaml`.
